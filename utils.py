@@ -5,20 +5,34 @@ because node classification scores a boolean node mask against precomputed
 hop features, not a DataLoader of independent samples.
 """
 
+import random
+import numpy as np
+
 import torch
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
-from fedavg.utils import set_seed
+from graph import agg_operator
 
-__all__ = ["set_seed", "evaluate"]
+
+
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 
 
 @torch.no_grad()
-def evaluate(model, hop_features, labels, mask, device):
+def evaluate(model, hop_features, edge_index, labels, mask, device):
     """Score `model` on the nodes selected by `mask` (e.g. val_mask/test_mask)."""
+    model = model.to(device)
+    labels = labels.to(device)
+    mask = mask.to(device)
     model.eval()
-    hop_features = [h.to(device) for h in hop_features]
-    logits = model(hop_features)
+    hop_features = hop_features.to(device)
+    agg_op = agg_operator(hop_features, edge_index).to(device)
+    logits = model(hop_features, agg_op)
     preds = logits[mask].argmax(dim=1).cpu().numpy()
     targets = labels[mask].cpu().numpy()
 
