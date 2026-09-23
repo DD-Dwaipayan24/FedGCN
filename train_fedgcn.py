@@ -22,9 +22,8 @@ from server import federated_average
 
 def train(args):
     set_seed(args.seed)
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = 'cpu'
-
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = 'cpu'
     dataset = Planetoid(root=args.data_dir, name=args.dataset, transform=NormalizeFeatures())
     data = dataset[0].to(device)
 
