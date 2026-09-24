@@ -172,7 +172,7 @@ def plot_metric(args, history, rounds, dataset, dpi):
     plt.ylabel("Validation Accuracy")
     plt.title(f"FedGCN on {dataset}")
     plt.grid(True)
-    plot_path = args.output_dir / "fedgcn_accuracy.png"
+    plot_path = args.output_dir + "fedgcn_accuracy.png"
     plt.savefig(plot_path, dpi=dpi)
     print(f"Saved accuracy plot to {plot_path}")
     # if show:
