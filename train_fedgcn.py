@@ -1,4 +1,8 @@
 import copy
+import json
+import pickle
+import pandas as pd
+
 
 import numpy as np
 import torch
@@ -13,6 +17,7 @@ from partition import community_partition, iid_partition
 from client import client_update
 from utils import evaluate, set_seed
 from server import federated_average
+from dataset import load_dataset
 
 
 
@@ -24,8 +29,21 @@ def train(args):
     set_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # device = 'cpu'
-    dataset = Planetoid(root=args.data_dir, name=args.dataset, transform=NormalizeFeatures())
+    dataset = load_dataset(args.dataset, args.data_root)
     data = dataset[0].to(device)
+
+    if args.dataset == "Cora" or args.dataset == "Citeseer" or args.dataset == "Pubmed":
+        train_mask = data.train_mask
+        val_mask = data.val_mask
+
+    if args.dataset == "Actor" or args.dataset == "Roman-empire" or args.dataset == "amazon-ratings":
+        train_mask = data.train_mask[:,0]
+        val_mask = data.val_mask[:,0]
+
+    if args.dataset == "Cornell" or args.dataset == "Texas" or args.dataset == "Wisconsin":
+        train_mask = torch.tensor([np.random.choice([True, False]) for _ in range(data.x.shape[0])])
+        val_mask = torch.tensor([np.random.choice([True, False]) for _ in range(data.x.shape[0])])
+
 
     # 
 
@@ -46,7 +64,7 @@ def train(args):
                 num_nodes=data.num_nodes)[0]
         for idxs in client_nodes
     ]
-    client_masks = [data.train_mask[idxs] for idxs in client_nodes]
+    client_masks = [train_mask[idxs] for idxs in client_nodes]
     hidden_dim = [data.x.shape[1]] + args.hidden_dims
 
     global_model = GCN_model(
@@ -102,10 +120,46 @@ def train(args):
         f"rec={test_metrics['recall']:.4f} f1={test_metrics['f1']:.4f}"
     )
 
+    # if test_metrics["accuracy"] > best_accuracy:
+    best_accuracy = test_metrics["accuracy"]
+    best_precision = test_metrics["precision"]
+    best_recall = test_metrics["recall"]
+    best_f1= test_metrics["f1"]
+    # patience_counter = 0
+
+    # else:
+        # patience_counter += 1
+        # if patience_counter >= args.patience:
+    metrics = {
+        "accuracy" : best_accuracy,
+        "precesion" : best_precision,
+        "recall" : best_recall,
+        "f1" : best_f1
+    }
+    # Saving the maodel performance in csv format
+    df = pd.DataFrame([metrics])
+    df.to_csv(f"{args.output_dir}/model_metrics.csv", index = False)
+
+    # Saving the maodel performance in json format
+    with open(f"{args.output_dir}/metrics.json", "w") as f:
+        json.dump(metrics, f, indent=4)
+
+    params = {
+        name: param.detach().cpu().numpy() 
+        for name, param in global_model.named_parameters()
+    }
+
+    with open(f"{args.output_dir}/model_params.pkl", "wb") as f:
+        pickle.dump(params, f)
+
+            
+
+
+
     
-    out_path = args.out
-    torch.save(global_model.state_dict(), out_path)
-    print(f"Saved final global model to {out_path}")
+    # out_path = args.out
+    # torch.save(global_model.state_dict(), out_path)
+    # print(f"Saved final global model to {out_path}")
 
     return history
 
@@ -118,7 +172,7 @@ def plot_metric(args, history, rounds, dataset, dpi):
     plt.ylabel("Validation Accuracy")
     plt.title(f"FedGCN on {dataset}")
     plt.grid(True)
-    plot_path = args.out / "fedgcn_accuracy.png"
+    plot_path = args.output_dir / "fedgcn_accuracy.png"
     plt.savefig(plot_path, dpi=dpi)
     print(f"Saved accuracy plot to {plot_path}")
     # if show:

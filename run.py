@@ -20,11 +20,17 @@ DATASETS = (
 def parse_args():
     parser = argparse.ArgumentParser(description="Federated GCN (FedGCN) on citation graphs")
     parser.add_argument(
-        "--dataset", type=str, default="Cora", choices=DATASETS
-        )
+        "--dataset", type=str, default="Cora", choices=DATASETS,
+        help="Dataset to train on (default: %(default)s)"
+    )
     parser.add_argument(
-        "--num_clients", type=int, default=10, help="Total number of clients (K)"
-        )
+        "--data-root", default="data",
+        help="Root directory to download/cache the dataset in (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--num_clients", type=int, default=10, 
+        help="Total number of clients (K)"
+    )
     parser.add_argument(
         "--rounds", type=int, default=50, help="Communication rounds (T)"
         )
@@ -33,13 +39,13 @@ def parse_args():
         )
     parser.add_argument(
         "--local_epochs", type=int, default=3, help="Local full-batch epochs per client (E)"
-        )
+    )
     parser.add_argument(
         "--lr", type=float, default=0.01, help="Local Adam learning rate"
-        )
+    )
     parser.add_argument(
-        "--weight_decay", type=float, default=5e-4
-        )
+        "--weight_decay", type=float, default=1e-4
+    )
     parser.add_argument(
         "--hidden-dims", type=int, nargs="+", default=[16],
         help="Sizes of the hidden layers between the input and output layers "
@@ -47,22 +53,23 @@ def parse_args():
     parser.add_argument(
         "--hops", type=int, default=2, 
         help="Pre-aggregated hops (L); matches the model's effective depth"
-        )
+    )
     parser.add_argument(
-        "--dropout", type=float, default=0.5
-        )
+        "--dropout", type=float, default=0.5,
+        help="Dropout probability applied between hops (default: %(default)s)",
+    )
     parser.add_argument(
         "--iid", action="store_true", help="Use a uniform random node split (default: community split)"
-        )
+    )
     parser.add_argument(
         "--seed", type=int, default=42
-        )
+    )
     parser.add_argument(
         "--data_dir", type=str, default="./data"
-        )
+    )
     parser.add_argument(
         "--out", type=str, default="fedgcn_model.pth", help="Filename (in outputs/) for the final global model"
-        )
+    )
     parser.add_argument(
         "--output-dir", default=".",
         help="Directory to save the accuracy/loss plots to (default: %(default)s)",
