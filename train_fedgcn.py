@@ -110,7 +110,7 @@ def train(args):
     return history
 
         
-def plot_metric(args, history, rounds, dataset, dpi, show):
+def plot_metric(args, history, rounds, dataset, dpi):
     accs = [m["accuracy"] for m in history]
     plt.figure()
     plt.plot(range(1, rounds + 1), accs, marker="o")
@@ -121,8 +121,8 @@ def plot_metric(args, history, rounds, dataset, dpi, show):
     plot_path = args.out / "fedgcn_accuracy.png"
     plt.savefig(plot_path, dpi=dpi)
     print(f"Saved accuracy plot to {plot_path}")
-    if show:
-        plt.show()
+    # if show:
+    #     plt.show()
     plt.close()
 
    

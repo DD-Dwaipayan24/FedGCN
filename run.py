@@ -64,6 +64,10 @@ def parse_args():
         "--out", type=str, default="fedgcn_model.pth", help="Filename (in outputs/) for the final global model"
         )
     parser.add_argument(
+        "--output-dir", default=".",
+        help="Directory to save the accuracy/loss plots to (default: %(default)s)",
+    )
+    parser.add_argument(
         "--dpi", type=int, default=1000,
         help="DPI used when saving plot images (default: %(default)s)",
     )
@@ -87,8 +91,7 @@ def main():
         history,
         args.rounds,
         args.dataset,
-        args.dpi,
-        args.show
+        args.dpi
     )
 
 if __name__ == "__main__":
